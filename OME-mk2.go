@@ -100,7 +100,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 	priceLevel := oppositeBook.PriceLevel[oppositeBook.BestPrice]
 
 	current := priceLevel.Head
-
+	trades := []Trade{}
 	for current != nil && order.Quantity > 0 {
 		var matchQTY uint64
 		if current.Quantity >= order.Quantity {
@@ -112,11 +112,14 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 		order.Quantity -= matchQTY
 		current.Quantity -= matchQTY
 
+		next := current.Next
 		if current.Quantity == 0 {
 			priceLevel.RemoveOrder(current)
 		}
 
-		current = current.Next
+		trades = append(trades, Trade{order.ID, current.ID, order.Price, matchQTY, time.Now()})
+
+		current = next
 	}
 
 }
