@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sort"
 	"sync"
 	"time"
 )
@@ -31,7 +32,8 @@ type OrderBook struct {
 	BestPrice  uint64
 	PriceLevel map[uint64]*PriceLevel //key is price level, value is head of doubly linked list at that pricelevel.
 	Orders     map[uint64]*OrderNode  //full map of orders is kept for O(1) cancellation.
-	SortedPl   []*PriceLevel
+	SortedPL   []uint64
+	Side       Side
 	mu         sync.Mutex
 }
 
@@ -95,10 +97,34 @@ func (pl *PriceLevel) RemoveHead() *OrderNode {
 	return removedOrder
 }
 
-func (ob *OrderBook) NextBestPriceLevel(side Side) {
+func (ob *OrderBook) NextBestPriceLevel() *PriceLevel {
 	//filter logic based on side, if bid then highest price is best, if ask - lowest price wins
-	//loop through the map to find the best price level, update the bestPrice var in the book
+	//Based on side, check either tail or head of map[]uint64 for SortedPL (organised largest to smallest)
+	if ob.SortedPL == nil {
+		return nil
+	}
 
+	if ob.Side == Buy {
+		ob.BestPrice = ob.SortedPL[0]
+	} else {
+		ob.BestPrice = ob.SortedPL[len(ob.SortedPL)-1]
+	}
+
+	return ob.PriceLevel[ob.BestPrice]
+}
+
+func (ob *OrderBook) InsertPriceLevel(price uint64) {
+	//use sort.Search to find insertion point assuming descending order.
+	//sort.Search handles the empty case by returning index 0
+	// sort.Search(len(sortedPL), func (i int) bool {return sortedPL[i] <= newPL})
+
+	i := sort.Search(len(ob.SortedPL), func(i int) bool { return ob.SortedPL[i] <= price })
+
+	valAbove := ob.SortedPL[i:]
+	valBelow := ob.SortedPL[:i:i]
+	newSlice := append(valBelow, price)
+	newSlice = append(newSlice, valAbove...)
+	ob.SortedPL = newSlice
 }
 
 func (e *Engine) Process(order *OrderNode) []Trade {
@@ -148,7 +174,27 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 			_ = priceLevel.RemoveHead()
 		}
 
+		if next == nil {
+			//call NextBestPriceLevel it should return a ptr to the current BestPL so that we can set next to point at the head of the PL
+			oppositeBook.removePriceLevel(current.Price)
+			nextPL := oppositeBook.NextBestPriceLevel()
+			next = nextPL.Head
+		}
+
 		current = next
+
 	}
 	return trades
+}
+
+func (ob *OrderBook) removePriceLevel(price uint64) {
+	//delete the price level from the map
+	//clear the price level from the sorted list
+	delete(ob.PriceLevel, price)
+	i := sort.Search(len(ob.SortedPL), func(i int) bool { return ob.SortedPL[i] <= price })
+
+	belowPL := ob.SortedPL[:i]
+	abovePL := ob.SortedPL[i+1:]
+	ob.SortedPL = append(belowPL, abovePL...)
+
 }
