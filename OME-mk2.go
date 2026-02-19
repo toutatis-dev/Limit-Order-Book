@@ -31,6 +31,7 @@ type OrderBook struct {
 	BestPrice  uint64
 	PriceLevel map[uint64]*PriceLevel //key is price level, value is head of doubly linked list at that pricelevel.
 	Orders     map[uint64]*OrderNode  //full map of orders is kept for O(1) cancellation.
+	SortedPl   []*PriceLevel
 	mu         sync.Mutex
 }
 
@@ -69,7 +70,34 @@ func (ob *OrderBook) AddOrder(order *OrderNode) {
 	//If not, search through the book, find the price level and then insert to the bottom of the price level.
 }
 
-func (pl PriceLevel) RemoveOrder(order *OrderNode) {
+func (pl *PriceLevel) RemoveHead() *OrderNode {
+	//removing an order from a price level will always remove from the head, so no need to search list.
+	//pL.head.next -> store in var
+	// pL.Head -> order .next, unless order.next is nil, in which case set head and tail to nil
+	//order.next.prev -> nil
+	//clean current order prev/next etc
+
+	if pl.Head == nil {
+		return nil
+	}
+
+	removedOrder := pl.Head
+	if pl.Head.Next == nil {
+		pl.Head = nil
+		pl.Tail = nil
+	} else {
+		pl.Head = pl.Head.Next
+		pl.Head.Prev = nil
+	}
+	removedOrder.Next = nil
+	removedOrder.Prev = nil
+
+	return removedOrder
+}
+
+func (ob *OrderBook) NextBestPriceLevel(side Side) {
+	//filter logic based on side, if bid then highest price is best, if ask - lowest price wins
+	//loop through the map to find the best price level, update the bestPrice var in the book
 
 }
 
@@ -90,9 +118,11 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 
 	if order.Side == Buy && order.Price < oppositeBook.BestPrice {
 		ownBook.AddOrder(order)
+		return []Trade{}
 	}
 	if order.Side == Sell && order.Price > oppositeBook.BestPrice {
 		ownBook.AddOrder(order)
+		return []Trade{}
 	}
 
 	//if we are here then the order is a valid match, so we need to find the PriceLevel by index of the order.price, and start decrementing quantity.
@@ -101,7 +131,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 
 	current := priceLevel.Head
 	trades := []Trade{}
-	for current != nil && order.Quantity > 0 {
+	for current != nil && order.Quantity > 0 { //will exhaust the current price level for as long as there is quantity in the order.
 		var matchQTY uint64
 		if current.Quantity >= order.Quantity {
 			matchQTY = order.Quantity
@@ -111,15 +141,14 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 
 		order.Quantity -= matchQTY
 		current.Quantity -= matchQTY
+		trades = append(trades, Trade{order.ID, current.ID, current.Price, matchQTY, time.Now()})
 
 		next := current.Next
 		if current.Quantity == 0 {
-			priceLevel.RemoveOrder(current)
+			_ = priceLevel.RemoveHead()
 		}
-
-		trades = append(trades, Trade{order.ID, current.ID, order.Price, matchQTY, time.Now()})
 
 		current = next
 	}
-
+	return trades
 }
