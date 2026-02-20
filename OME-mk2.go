@@ -92,7 +92,7 @@ func (ob *OrderBook) AddOrder(order *OrderNode) {
 	if ob.Side == Buy && order.Price > ob.BestPrice {
 		ob.BestPrice = order.Price
 	}
-	if ob.Side == Sell && (order.Price < ob.BestPrice || ob.BestPrice != 0) {
+	if ob.Side == Sell && (order.Price < ob.BestPrice || ob.BestPrice == 0) {
 		ob.BestPrice = order.Price
 	}
 
