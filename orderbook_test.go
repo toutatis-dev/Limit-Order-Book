@@ -9,22 +9,22 @@ func TestNewOrder(t *testing.T) {
 	example := OrderNode{ID: 1, Side: Buy, Price: 100, Quantity: 10}
 
 	if testOrder.Next != example.Next {
-		t.Errorf("Expected %v, got %v", example.Next, testOrder.Next)
+		t.Errorf("Next incorrectly init. Expected %v, got %v", example.Next, testOrder.Next)
 	}
 	if testOrder.Prev != example.Prev {
-		t.Errorf("Expected %v, got %v", example.Prev, testOrder.Prev)
+		t.Errorf("Prev incorrectly init. Expected %v, got %v", example.Prev, testOrder.Prev)
 	}
 	if testOrder.ID != example.ID {
-		t.Errorf("Expected %v, got %v", example.ID, testOrder.ID)
+		t.Errorf("ID incorrectly init. Expected %v, got %v", example.ID, testOrder.ID)
 	}
 	if testOrder.Side != example.Side {
-		t.Errorf("Expected %v, got %v", example.Side, testOrder.Side)
+		t.Errorf("Side incorrectly init. Expected %v, got %v", example.Side, testOrder.Side)
 	}
 	if testOrder.Price != example.Price {
-		t.Errorf("Expected %v, got %v", example.Price, testOrder.Price)
+		t.Errorf("Price incorrectly init. Expected %v, got %v", example.Price, testOrder.Price)
 	}
 	if testOrder.Quantity != example.Quantity {
-		t.Errorf("Expected %v, got %v", example.Quantity, testOrder.Quantity)
+		t.Errorf("Quantity incorrectly init. Expected %v, got %v", example.Quantity, testOrder.Quantity)
 	}
 }
 
@@ -37,31 +37,31 @@ func TestInsertPriceLevel(t *testing.T)  {
 		ob.InsertPriceLevel(20)
 
 		if ob.SortedPL[0] != 20 {
-			t.Errorf("Expected 20, got %v\n", ob.SortedPL[0])
+			t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[0])
 		}
 		if ob.SortedPL[1] != 10 {
-			t.Errorf("Expected 20, got %v\n", ob.SortedPL[1])
+			t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[1])
 		}
 
 		if ob.PriceLevel[10].Head != nil {
-			t.Errorf("Expected nil, got %v\n", ob.PriceLevel[10].Head)
+			t.Errorf("Incorrectly init price level head. Expected nil, got %v\n", ob.PriceLevel[10].Head)
 		}
 		if ob.PriceLevel[10].Tail != nil {
-			t.Errorf("Expected nil, got %v\n", ob.PriceLevel[10].Tail)
+			t.Errorf("Incorrectly init price level tail. Expected nil, got %v\n", ob.PriceLevel[10].Tail)
 		}
 		if ob.PriceLevel[10].TotalQuantity != 0 {
-			t.Errorf("Expected 0, got %v\n", ob.PriceLevel[10].TotalQuantity)
+			t.Errorf("Incorrectly init price level total quantity. Expected 0, got %v\n", ob.PriceLevel[10].TotalQuantity)
 		}
 		
 
 		if ob.PriceLevel[20].Head != nil {
-			t.Errorf("Expected nil, got %v\n", ob.PriceLevel[20].Head)
+			t.Errorf("Incorrectly init price level head. Expected nil, got %v\n", ob.PriceLevel[20].Head)
 		}
 		if ob.PriceLevel[20].Tail != nil {
-			t.Errorf("Expected nil, got %v\n", ob.PriceLevel[20].Tail)
+			t.Errorf("Incorrectly init price level tail. Expected nil, got %v\n", ob.PriceLevel[20].Tail)
 		}
 		if ob.PriceLevel[20].TotalQuantity != 0 {
-			t.Errorf("Expected 0, got %v\n", ob.PriceLevel[20].TotalQuantity)
+			t.Errorf("Incorrectly init price level total quantity. Expected 0, got %v\n", ob.PriceLevel[20].TotalQuantity)
 		}
 }
 
