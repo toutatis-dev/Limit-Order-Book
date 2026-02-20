@@ -29,10 +29,7 @@ func TestNewOrder(t *testing.T) {
 }
 
 func TestInsertPriceLevel(t *testing.T)  {
-	ob := OrderBook{
-		PriceLevel: make(map[uint64]*PriceLevel),
-		Orders: make(map[uint64]*OrderNode),
-		}
+	ob := NewOrderBook(Buy)
 		ob.InsertPriceLevel(10)
 		ob.InsertPriceLevel(20)
 
@@ -67,11 +64,8 @@ func TestInsertPriceLevel(t *testing.T)  {
 
 func TestAddOrder(t *testing.T)  {
 	
-	ob := OrderBook{
-		PriceLevel: make(map[uint64]*PriceLevel),
-		Orders: make(map[uint64]*OrderNode),
-		Side: Buy,
-		}
+	ob := NewOrderBook(Buy)
+		
 	testOrder := NewOrder(1, Buy, 100, 10)
 
 	ob.AddOrder(testOrder)
@@ -112,16 +106,10 @@ func TestProcess(t *testing.T)  {
 	//construct a complementary order that will go on to the second book
 	//third order that will execute a trade fully, fourth order that will partially fill a trade
 	//ensure that it moves down/up the price levels correctly
-	sellBook := OrderBook{
-		PriceLevel: make(map[uint64]*PriceLevel), 
-		Orders: make(map[uint64]*OrderNode),  
-		Side: Sell,
-	}
-	buyBook := OrderBook{
-		PriceLevel: make(map[uint64]*PriceLevel), 
-		Orders: make(map[uint64]*OrderNode),  
-		Side: Buy,
-	}
+	sellBook := NewOrderBook(Sell)
+	
+	buyBook := NewOrderBook(Buy)
+	
 
 	e := Engine{
 		SellBook: &sellBook,
