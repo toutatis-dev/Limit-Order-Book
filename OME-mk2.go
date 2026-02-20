@@ -68,8 +68,34 @@ func NewOrder(id uint64, side Side, price uint64, quantity uint64) *OrderNode {
 }
 
 func (ob *OrderBook) AddOrder(order *OrderNode) {
-	//take in an order and add to correct book. We assume the engine has already decided which side the order is on. Check if the book is empty; if so make Head & Tail point to this order.
-	//If not, search through the book, find the price level and then insert to the bottom of the price level.
+	//take the order and discover the price level. search the map in o(1) for the price level. if it doesnt exist, then create the price level and point the head & tail to this order.
+	//make sure to add the new price level to the sorted slice.
+	//if the price level exists, the current tail next needs to point to this order, the order.Prev needs to point to the tail and order.Next to nil, then update price level tail to order.
+	//any order must be added to the order map for cancellation and best price updated - remember to also ensure that bestAsk is != 0.
+
+	pl := ob.PriceLevel[order.Price]
+
+	if pl == nil {
+		ob.InsertPriceLevel(order.Price)
+		pl = ob.PriceLevel[order.Price]
+		pl.Head = order
+		pl.Tail = order
+	} else {
+		order.Prev = pl.Tail
+		order.Next = nil
+		pl.Tail.Next = order
+		pl.Tail = order
+	}
+
+	ob.Orders[order.ID] = order
+
+	if ob.Side == Buy && order.Price > ob.BestPrice {
+		ob.BestPrice = order.Price
+	}
+	if ob.Side == Sell && (order.Price < ob.BestPrice || ob.BestPrice != 0) {
+		ob.BestPrice = order.Price
+	}
+
 }
 
 func (pl *PriceLevel) RemoveHead() *OrderNode {
@@ -125,6 +151,8 @@ func (ob *OrderBook) InsertPriceLevel(price uint64) {
 	newSlice := append(valBelow, price)
 	newSlice = append(newSlice, valAbove...)
 	ob.SortedPL = newSlice
+
+	ob.PriceLevel[price] = &PriceLevel{Head: nil, Tail: nil, TotalQuantity: 0}
 }
 
 func (e *Engine) Process(order *OrderNode) []Trade {
@@ -178,6 +206,9 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 			//call NextBestPriceLevel it should return a ptr to the current BestPL so that we can set next to point at the head of the PL
 			oppositeBook.removePriceLevel(current.Price)
 			nextPL := oppositeBook.NextBestPriceLevel()
+			if nextPL == nil {
+				return trades
+			}
 			next = nextPL.Head
 		}
 
