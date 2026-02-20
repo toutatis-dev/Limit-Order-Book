@@ -106,14 +106,10 @@ func TestProcess(t *testing.T)  {
 	//construct a complementary order that will go on to the second book
 	//third order that will execute a trade fully, fourth order that will partially fill a trade
 	//ensure that it moves down/up the price levels correctly
-	sellBook := NewOrderBook(Sell)
-	
-	buyBook := NewOrderBook(Buy)
-	
 
 	e := Engine{
-		SellBook: &sellBook,
-		BuyBook: &buyBook,	
+		SellBook: NewOrderBook(Sell),
+		BuyBook: NewOrderBook(Buy),	
 	}
 	//bid order 1 - price 100, quant 20 - straight on the books with no match.
 	//ask order 1 - price 120, quant 15, - straight on the books with no match.

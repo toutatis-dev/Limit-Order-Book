@@ -277,8 +277,8 @@ func (ob *OrderBook) removePriceLevel(price uint64) {
 
 }
 
-func NewOrderBook(side Side)  OrderBook{
-	return OrderBook{
+func NewOrderBook(side Side) *OrderBook{
+	return &OrderBook{
 		PriceLevel: make(map[uint64]*PriceLevel), 
 		Orders: make(map[uint64]*OrderNode),  
 		Side: side,
