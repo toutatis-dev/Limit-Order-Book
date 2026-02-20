@@ -28,44 +28,43 @@ func TestNewOrder(t *testing.T) {
 	}
 }
 
-func TestInsertPriceLevel(t *testing.T)  {
+func TestInsertPriceLevel(t *testing.T) {
 	ob := NewOrderBook(Buy)
-		ob.InsertPriceLevel(10)
-		ob.InsertPriceLevel(20)
+	ob.InsertPriceLevel(10)
+	ob.InsertPriceLevel(20)
 
-		if ob.SortedPL[0] != 20 {
-			t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[0])
-		}
-		if ob.SortedPL[1] != 10 {
-			t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[1])
-		}
+	if ob.SortedPL[0] != 20 {
+		t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[0])
+	}
+	if ob.SortedPL[1] != 10 {
+		t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[1])
+	}
 
-		if ob.PriceLevel[10].Head != nil {
-			t.Errorf("Incorrectly init price level head. Expected nil, got %v\n", ob.PriceLevel[10].Head)
-		}
-		if ob.PriceLevel[10].Tail != nil {
-			t.Errorf("Incorrectly init price level tail. Expected nil, got %v\n", ob.PriceLevel[10].Tail)
-		}
-		if ob.PriceLevel[10].TotalQuantity != 0 {
-			t.Errorf("Incorrectly init price level total quantity. Expected 0, got %v\n", ob.PriceLevel[10].TotalQuantity)
-		}
-		
+	if ob.PriceLevel[10].Head != nil {
+		t.Errorf("Incorrectly init price level head. Expected nil, got %v\n", ob.PriceLevel[10].Head)
+	}
+	if ob.PriceLevel[10].Tail != nil {
+		t.Errorf("Incorrectly init price level tail. Expected nil, got %v\n", ob.PriceLevel[10].Tail)
+	}
+	if ob.PriceLevel[10].TotalQuantity != 0 {
+		t.Errorf("Incorrectly init price level total quantity. Expected 0, got %v\n", ob.PriceLevel[10].TotalQuantity)
+	}
 
-		if ob.PriceLevel[20].Head != nil {
-			t.Errorf("Incorrectly init price level head. Expected nil, got %v\n", ob.PriceLevel[20].Head)
-		}
-		if ob.PriceLevel[20].Tail != nil {
-			t.Errorf("Incorrectly init price level tail. Expected nil, got %v\n", ob.PriceLevel[20].Tail)
-		}
-		if ob.PriceLevel[20].TotalQuantity != 0 {
-			t.Errorf("Incorrectly init price level total quantity. Expected 0, got %v\n", ob.PriceLevel[20].TotalQuantity)
-		}
+	if ob.PriceLevel[20].Head != nil {
+		t.Errorf("Incorrectly init price level head. Expected nil, got %v\n", ob.PriceLevel[20].Head)
+	}
+	if ob.PriceLevel[20].Tail != nil {
+		t.Errorf("Incorrectly init price level tail. Expected nil, got %v\n", ob.PriceLevel[20].Tail)
+	}
+	if ob.PriceLevel[20].TotalQuantity != 0 {
+		t.Errorf("Incorrectly init price level total quantity. Expected 0, got %v\n", ob.PriceLevel[20].TotalQuantity)
+	}
 }
 
-func TestAddOrder(t *testing.T)  {
-	
+func TestAddOrder(t *testing.T) {
+
 	ob := NewOrderBook(Buy)
-		
+
 	testOrder := NewOrder(1, Buy, 100, 10)
 
 	ob.AddOrder(testOrder)
@@ -78,11 +77,10 @@ func TestAddOrder(t *testing.T)  {
 		t.Errorf("PL Tail not pointing to only order. Expected %v, got %v\n", testOrder, ob.PriceLevel[testOrder.Price].Tail)
 	}
 
-
 	testOrder2 := NewOrder(2, Buy, 100, 20)
 	ob.AddOrder(testOrder2)
 	//test that the second order is inserted into the price level after the first.
-	if ob.PriceLevel[testOrder2.Price].Head.Next != testOrder2 {//verify that the second order is second in the price level
+	if ob.PriceLevel[testOrder2.Price].Head.Next != testOrder2 { //verify that the second order is second in the price level
 		t.Errorf("Second Order not inserted into price level correctly. Expected %v, got %v\n", testOrder2, ob.PriceLevel[testOrder2.Price].Head.Next)
 	}
 	//check that thet ob.Orders map is intitialised with the orders for cancellations
@@ -100,8 +98,8 @@ func TestAddOrder(t *testing.T)  {
 
 }
 
-func TestProcess(t *testing.T)  {
-	//Initialise an engine, order books and orders. 
+func TestProcess(t *testing.T) {
+	//Initialise an engine, order books and orders.
 	//check that first order makes it onto the book
 	//construct a complementary order that will go on to the second book
 	//third order that will execute a trade fully, fourth order that will partially fill a trade
@@ -109,7 +107,7 @@ func TestProcess(t *testing.T)  {
 
 	e := Engine{
 		SellBook: NewOrderBook(Sell),
-		BuyBook: NewOrderBook(Buy),	
+		BuyBook:  NewOrderBook(Buy),
 	}
 	//bid order 1 - price 100, quant 20 - straight on the books with no match.
 	//ask order 1 - price 120, quant 15, - straight on the books with no match.
@@ -150,21 +148,20 @@ func TestProcess(t *testing.T)  {
 		t.Errorf("No trade was returned after bidOrder2")
 	}
 	if trade[0].TakerID != bidOrder2.ID {
-		t.Errorf("bidOrder2 trade returned taker ID %d. Expected %d",trade[0].TakerID, bidOrder2.ID)
+		t.Errorf("bidOrder2 trade returned taker ID %d. Expected %d", trade[0].TakerID, bidOrder2.ID)
 	}
 	if trade[0].MakerID != askOrder1.ID {
-		t.Errorf("bidOrder2 trade returned Maker ID %d. Expected %d",trade[0].MakerID, askOrder1.ID)
+		t.Errorf("bidOrder2 trade returned Maker ID %d. Expected %d", trade[0].MakerID, askOrder1.ID)
 	}
 	if trade[0].Price != askOrder1.Price {
-		t.Errorf("bidOrder2 trade returned Price %d. Expected %d",trade[0].Price, askOrder1.Price)
+		t.Errorf("bidOrder2 trade returned Price %d. Expected %d", trade[0].Price, askOrder1.Price)
 	}
 	if trade[0].Quantity != expectedQty {
-		t.Errorf("bidOrder2 trade returned Quantity %d. Expected %d",trade[0].Quantity, expectedQty)
+		t.Errorf("bidOrder2 trade returned Quantity %d. Expected %d", trade[0].Quantity, expectedQty)
 	}
-	if trade[0].Timestamp.IsZero(){
+	if trade[0].Timestamp.IsZero() {
 		t.Errorf("Time stamp not set on bidOrder2 trade")
 	}
-
 
 	askOrder2 := NewOrder(4, Sell, 100, 10)
 	expectedQty = askOrder2.Quantity
@@ -177,18 +174,18 @@ func TestProcess(t *testing.T)  {
 		t.Errorf("No trade was returned after askOrder2\n")
 	}
 	if trade[0].TakerID != askOrder2.ID {
-		t.Errorf("askOrder2 trade returned taker ID %d. Expected %d\n",trade[0].TakerID, askOrder2.ID)
+		t.Errorf("askOrder2 trade returned taker ID %d. Expected %d\n", trade[0].TakerID, askOrder2.ID)
 	}
 	if trade[0].MakerID != bidOrder1.ID {
-		t.Errorf("askOrder2 trade returned Maker ID %d. Expected %d\n",trade[0].MakerID, bidOrder1.ID)
+		t.Errorf("askOrder2 trade returned Maker ID %d. Expected %d\n", trade[0].MakerID, bidOrder1.ID)
 	}
 	if trade[0].Price != bidOrder1.Price {
-		t.Errorf("askOrder2 trade returned Price %d. Expected %d\n",trade[0].Price, bidOrder1.Price)
+		t.Errorf("askOrder2 trade returned Price %d. Expected %d\n", trade[0].Price, bidOrder1.Price)
 	}
 	if trade[0].Quantity != expectedQty {
-		t.Errorf("bidOrder2 trade returned Quantity %d. Expected %d\n",trade[0].Quantity, expectedQty)
+		t.Errorf("bidOrder2 trade returned Quantity %d. Expected %d\n", trade[0].Quantity, expectedQty)
 	}
-	if trade[0].Timestamp.IsZero(){
+	if trade[0].Timestamp.IsZero() {
 		t.Errorf("Time stamp not set on bidOrder2 trade\n")
 	}
 
@@ -255,6 +252,5 @@ func TestProcess(t *testing.T)  {
 	if len(e.BuyBook.SortedPL) != 0 {
 		t.Errorf("Buy side still has price levels after bid3 trades.")
 	}
-
 
 }
