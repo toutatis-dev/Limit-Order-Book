@@ -1,0 +1,6 @@
+# Binaries
+lob
+*.exe
+
+# Test cache
+*.test
