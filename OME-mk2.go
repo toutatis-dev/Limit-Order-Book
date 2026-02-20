@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -67,11 +68,16 @@ func NewOrder(id uint64, side Side, price uint64, quantity uint64) *OrderNode {
 
 }
 
-func (ob *OrderBook) AddOrder(order *OrderNode) {
+func (ob *OrderBook) AddOrder(order *OrderNode) error {
 	//take the order and discover the price level. search the map in o(1) for the price level. if it doesnt exist, then create the price level and point the head & tail to this order.
 	//make sure to add the new price level to the sorted slice.
 	//if the price level exists, the current tail next needs to point to this order, the order.Prev needs to point to the tail and order.Next to nil, then update price level tail to order.
 	//any order must be added to the order map for cancellation and best price updated - remember to also ensure that bestAsk is != 0.
+
+	_, exists := ob.Orders[order.ID]
+	if exists {
+		return fmt.Errorf("Duplicate Order ID: %d", order.ID)
+	}
 
 	pl := ob.PriceLevel[order.Price]
 
@@ -100,7 +106,7 @@ func (ob *OrderBook) AddOrder(order *OrderNode) {
 			ob.BestPrice = order.Price
 		}
 	}
-
+	return nil
 }
 
 func (pl *PriceLevel) RemoveHead() *OrderNode {
@@ -219,7 +225,11 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 
 		next := current.Next
 		if current.Quantity == 0 {
-			_ = priceLevel.RemoveHead()
+			removedOrder := priceLevel.RemoveHead()
+			if removedOrder != nil {
+				delete(oppositeBook.Orders, removedOrder.ID)
+			}
+
 		}
 
 		if next == nil && priceLevel.TotalQuantity == 0 {

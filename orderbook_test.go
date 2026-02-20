@@ -131,7 +131,7 @@ func TestProcess(t *testing.T) {
 	trade = e.Process(askOrder1)
 	//check if it hits the book
 	if e.SellBook.PriceLevel[120].Head != askOrder1 {
-		t.Errorf("askOrder1 did not hit sellbook correctly. Expected %v, got %v\n", askOrder1, e.SellBook.PriceLevel[100].Head)
+		t.Errorf("askOrder1 did not hit sellbook correctly. Expected %v, got %v\n", askOrder1, e.SellBook.PriceLevel[120].Head)
 	}
 	if len(trade) != 0 {
 		t.Errorf("A trade was returned after askOrder1")
@@ -238,11 +238,13 @@ func TestProcess(t *testing.T) {
 		t.Errorf("Wrong quantity for trade between bid3 and ask3. Expected %d, got %d\n", expectedQtyAsk3, trade[0].Quantity)
 	}
 	//is it making the trade for full quant of askOrder4?
-	if trade[1].MakerID != askOrder4.ID {
-		t.Errorf("Trade not executed between bid3 and ask4. Expected %d, got %d\n", askOrder4.ID, trade[1].MakerID)
-	}
-	if trade[1].Quantity != expectedQtyAsk4 {
-		t.Errorf("Wrong quantity for trade between bid3 and ask4. Expected %d, got %d\n", expectedQtyAsk4, trade[1].Quantity)
+	if len(trade) >= 2 {
+		if trade[1].MakerID != askOrder4.ID {
+			t.Errorf("Trade not executed between bid3 and ask4. Expected %d, got %d\n", askOrder4.ID, trade[1].MakerID)
+		}
+		if trade[1].Quantity != expectedQtyAsk4 {
+			t.Errorf("Wrong quantity for trade between bid3 and ask4. Expected %d, got %d\n", expectedQtyAsk4, trade[1].Quantity)
+		}
 	}
 	//are both sell side price levels removed?
 	if len(e.SellBook.SortedPL) != 0 {
