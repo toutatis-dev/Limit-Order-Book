@@ -87,6 +87,8 @@ func (ob *OrderBook) AddOrder(order *OrderNode) {
 		pl.Tail = order
 	}
 
+	pl.TotalQuantity += order.Quantity
+
 	ob.Orders[order.ID] = order
 
 	if ob.Side == Buy && order.Price > ob.BestPrice {
@@ -119,6 +121,7 @@ func (pl *PriceLevel) RemoveHead() *OrderNode {
 	}
 	removedOrder.Next = nil
 	removedOrder.Prev = nil
+
 
 	return removedOrder
 }
@@ -195,6 +198,8 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 
 		order.Quantity -= matchQTY
 		current.Quantity -= matchQTY
+		priceLevel.TotalQuantity -= matchQTY
+
 		trades = append(trades, Trade{order.ID, current.ID, current.Price, matchQTY, time.Now()})
 
 		next := current.Next
@@ -210,6 +215,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 				return trades
 			}
 			next = nextPL.Head
+			priceLevel = nextPL
 		}
 
 		current = next
