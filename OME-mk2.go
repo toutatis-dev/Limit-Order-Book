@@ -90,12 +90,15 @@ func (ob *OrderBook) AddOrder(order *OrderNode) {
 	pl.TotalQuantity += order.Quantity
 
 	ob.Orders[order.ID] = order
-
-	if ob.Side == Buy && order.Price > ob.BestPrice {
+	if len(ob.SortedPL) == 1{
 		ob.BestPrice = order.Price
-	}
-	if ob.Side == Sell && (order.Price < ob.BestPrice || ob.BestPrice == 0) {
-		ob.BestPrice = order.Price
+	}else{
+		if ob.Side == Buy && order.Price > ob.BestPrice {
+			ob.BestPrice = order.Price
+		}
+		if ob.Side == Sell && (order.Price < ob.BestPrice || ob.BestPrice == 0) {
+			ob.BestPrice = order.Price
+		}
 	}
 
 }
@@ -129,7 +132,12 @@ func (pl *PriceLevel) RemoveHead() *OrderNode {
 func (ob *OrderBook) NextBestPriceLevel() *PriceLevel {
 	//filter logic based on side, if bid then highest price is best, if ask - lowest price wins
 	//Based on side, check either tail or head of map[]uint64 for SortedPL (organised largest to smallest)
+	
 	if ob.SortedPL == nil {
+		return nil
+	}
+
+	if len(ob.SortedPL) == 0 {
 		return nil
 	}
 
@@ -173,10 +181,17 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 		oppositeBook = e.BuyBook
 	}
 
+	if len(oppositeBook.SortedPL) == 0{
+		//no orders on opposite book. 
+		ownBook.AddOrder(order)
+		return []Trade{}
+	}
+
 	if order.Side == Buy && order.Price < oppositeBook.BestPrice {
 		ownBook.AddOrder(order)
 		return []Trade{}
 	}
+	
 	if order.Side == Sell && order.Price > oppositeBook.BestPrice {
 		ownBook.AddOrder(order)
 		return []Trade{}
@@ -189,6 +204,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 	current := priceLevel.Head
 	trades := []Trade{}
 	for current != nil && order.Quantity > 0 { //will exhaust the current price level for as long as there is quantity in the order.
+		
 		var matchQTY uint64
 		if current.Quantity >= order.Quantity {
 			matchQTY = order.Quantity
@@ -200,6 +216,8 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 		current.Quantity -= matchQTY
 		priceLevel.TotalQuantity -= matchQTY
 
+		
+
 		trades = append(trades, Trade{order.ID, current.ID, current.Price, matchQTY, time.Now()})
 
 		next := current.Next
@@ -207,19 +225,42 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 			_ = priceLevel.RemoveHead()
 		}
 
-		if next == nil {
+		if next == nil && priceLevel.TotalQuantity == 0{
 			//call NextBestPriceLevel it should return a ptr to the current BestPL so that we can set next to point at the head of the PL
+			
 			oppositeBook.removePriceLevel(current.Price)
 			nextPL := oppositeBook.NextBestPriceLevel()
 			if nextPL == nil {
+				
+				if order.Quantity > 0 {
+					ownBook.AddOrder(order)
+				}
+				return trades
+			}
+
+			if order.Side == Buy && order.Price < oppositeBook.BestPrice{
+				if order.Quantity > 0 {
+					ownBook.AddOrder(order)
+				}
+				return trades
+			}
+			if order.Side == Sell && order.Price > oppositeBook.BestPrice{
+				if order.Quantity > 0 {
+					ownBook.AddOrder(order)
+				}
 				return trades
 			}
 			next = nextPL.Head
 			priceLevel = nextPL
 		}
 
+		
 		current = next
 
+	}
+	
+	if order.Quantity > 0 {
+		ownBook.AddOrder(order)
 	}
 	return trades
 }
@@ -230,8 +271,8 @@ func (ob *OrderBook) removePriceLevel(price uint64) {
 	delete(ob.PriceLevel, price)
 	i := sort.Search(len(ob.SortedPL), func(i int) bool { return ob.SortedPL[i] <= price })
 
-	belowPL := ob.SortedPL[:i]
-	abovePL := ob.SortedPL[i+1:]
-	ob.SortedPL = append(belowPL, abovePL...)
+	if i < len(ob.SortedPL) && ob.SortedPL[i] == price {
+        ob.SortedPL = append(ob.SortedPL[:i], ob.SortedPL[i+1:]...)
+    }
 
 }
