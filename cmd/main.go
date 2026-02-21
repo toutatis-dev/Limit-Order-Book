@@ -17,6 +17,7 @@ func main() {
 
 	r.Post("/order", a.HandleCreateOrder)
 	r.Post("/cancel", a.HandleCancelOrder)
+	r.Get("/book", a.HandleGetBook)
 
 	http.ListenAndServe(":8080", r)
 }
