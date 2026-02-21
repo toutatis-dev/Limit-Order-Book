@@ -290,3 +290,50 @@ func NewOrderBook(side Side) *OrderBook {
 		Side:       side,
 	}
 }
+
+func (ob *OrderBook) CancelOrder(id uint64) error {
+	//search the id in the Orders map to find the node.
+	//set order.Prev.Next to order.Next
+	//set Order.Next.Prev to order.Prev
+	//we also need to decrement the pl.totalquantity by order.quantity
+	//if either order.Prev or order.Next are nil, then its at the end or the beginning of the PL.
+	//if both are nil, then the price level is empty, so we must pass it to ob.RemovePriceLevel
+	//find the price level by looking up order.Price in the pl map. and update pl.Head or pl.Tail accordingly.
+	//then we should call ob.NextBestPriceLevel, to make sure that it is updated.
+
+	order, err := ob.Orders[id]
+	if err {
+		return fmt.Errorf("ID %d does not exist in book", id)
+	}
+
+	//Check if price level will be empty after removal of order.If so, remove it
+	if order.Prev == nil && order.Next == nil {
+		ob.removePriceLevel(order.Price)
+		if order.Price == ob.BestPrice { //if this price level was the best, then determine nextbest
+			ob.NextBestPriceLevel()
+		}
+		delete(ob.Orders, id)
+		return
+	}
+
+	//if order.next is nil, then its at the tail, so pl.tail must point to order.prev
+	if order.Next == nil {
+		ob.PriceLevel[order.Price].Tail = order.Prev
+	} else { //its not at the tail
+		order.Next.Prev = order.Prev
+	}
+
+	//if order.prev is nil, then its at the head, so pl.head must point to order.next
+	if order.Prev == nil {
+		ob.PriceLevel[order.Price].Head = order.Next
+	} else { //its not at the head
+		order.Prev.Next = order.Next
+	}
+
+	order.Next = nil
+	order.Prev = nil
+
+	ob.PriceLevel[order.Price].TotalQuantity -= order.Quantity
+	delete(ob.Orders, id)
+
+}
