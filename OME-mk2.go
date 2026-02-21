@@ -301,8 +301,8 @@ func (ob *OrderBook) CancelOrder(id uint64) error {
 	//find the price level by looking up order.Price in the pl map. and update pl.Head or pl.Tail accordingly.
 	//then we should call ob.NextBestPriceLevel, to make sure that it is updated.
 
-	order, err := ob.Orders[id]
-	if err {
+	order, ok := ob.Orders[id]
+	if !ok {
 		return fmt.Errorf("ID %d does not exist in book", id)
 	}
 
@@ -313,7 +313,7 @@ func (ob *OrderBook) CancelOrder(id uint64) error {
 			ob.NextBestPriceLevel()
 		}
 		delete(ob.Orders, id)
-		return
+		return nil
 	}
 
 	//if order.next is nil, then its at the tail, so pl.tail must point to order.prev
@@ -335,5 +335,6 @@ func (ob *OrderBook) CancelOrder(id uint64) error {
 
 	ob.PriceLevel[order.Price].TotalQuantity -= order.Quantity
 	delete(ob.Orders, id)
+	return nil
 
 }
