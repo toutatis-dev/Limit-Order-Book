@@ -256,3 +256,57 @@ func TestProcess(t *testing.T) {
 	}
 
 }
+
+func TestCancelOrder(t *testing.T) {
+	//ccreate 2 orders on 2 price levels. Cancel the best price level
+	//is the best price updated. is the old price level removed.
+	//create multiple orders on the price level. does unlinking the list work
+	e := Engine{
+		SellBook: NewOrderBook(Sell),
+		BuyBook:  NewOrderBook(Buy),
+	}
+
+	bidOrder1 := NewOrder(1, Buy, 100, 10)
+	e.Process(bidOrder1)
+	bidOrder2 := NewOrder(2, Buy, 120, 10)
+	e.Process(bidOrder2)
+
+	e.CancelOrder(bidOrder2.ID)
+
+	if e.BuyBook.BestPrice != bidOrder1.Price {
+		t.Errorf("The best price did not update on cancellation of bidOrder2. Expected %d, got %d\n", bidOrder1.Price, e.BuyBook.BestPrice)
+	}
+	if e.BuyBook.PriceLevel[bidOrder2.Price] != nil {
+		t.Errorf("bidOrder2 Price level was not removed during cancellation\n")
+	}
+
+	askOrder1 := NewOrder(3, Sell, 100, 10)
+	askOrder2 := NewOrder(4, Sell, 100, 10)
+	askOrder3 := NewOrder(5, Sell, 100, 10)
+	askOrder4 := NewOrder(6, Sell, 100, 10)
+	askOrder5 := NewOrder(7, Sell, 100, 10)
+	e.Process(askOrder1)
+	e.Process(askOrder2)
+	e.Process(askOrder3)
+	e.Process(askOrder4)
+	e.Process(askOrder5)
+	//cancel order 3, check that 4 <-> 2
+	e.CancelOrder(askOrder3.ID)
+	if askOrder4.Prev != askOrder2 {
+		t.Errorf("Expected that order 4 -> order 2. Instead order 4 .prev is %v", askOrder4.Prev)
+	}
+	if askOrder2.Next != askOrder4 {
+		t.Errorf("Expected that order 2 -> order 4. Instead order 2 .next is %v", askOrder2.Next)
+	}
+	//cancel 1, check that pl.Head -> 2
+	e.CancelOrder(askOrder1.ID)
+	if e.SellBook.PriceLevel[askOrder2.Price].Head != askOrder2 {
+		t.Errorf("PL Head is not pointing to order 2. pl head is: %v", e.SellBook.PriceLevel[askOrder2.Price].Head)
+	}
+
+	//cancel 5, check that pl.Tail -> 4
+	e.CancelOrder(askOrder5.ID)
+	if e.SellBook.PriceLevel[askOrder5.Price].Tail != askOrder4 {
+		t.Errorf("PL Head is not pointing to order 4. pl head is: %v", e.SellBook.PriceLevel[askOrder2.Price].Tail)
+	}
+}
