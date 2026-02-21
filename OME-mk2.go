@@ -291,6 +291,18 @@ func NewOrderBook(side Side) *OrderBook {
 	}
 }
 
+func (e *Engine) CancelOrder(id uint64) error {
+
+	if e.BuyBook.Orders[id] != nil {
+		return e.BuyBook.CancelOrder(id)
+	}
+	if e.SellBook.Orders[id] != nil {
+		return e.SellBook.CancelOrder(id)
+	}
+	return fmt.Errorf("ID %d not in either book", id)
+
+}
+
 func (ob *OrderBook) CancelOrder(id uint64) error {
 	//search the id in the Orders map to find the node.
 	//set order.Prev.Next to order.Next
