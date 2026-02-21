@@ -16,6 +16,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Post("/order", a.HandleCreateOrder)
+	r.Post("/cancel", a.HandleCancelOrder)
 
 	http.ListenAndServe(":8080", r)
 }
