@@ -44,11 +44,11 @@ type Engine struct {
 }
 
 type Trade struct {
-	TakerID   uint64
-	MakerID   uint64
-	Price     uint64
-	Quantity  uint64
-	Timestamp time.Time
+	TakerID   uint64    `json:"taker_id"`
+	MakerID   uint64    `json:"maker_id"`
+	Price     uint64    `json:"price"`
+	Quantity  uint64    `json:"quantity"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 func NewOrder(id uint64, side Side, price uint64, quantity uint64) *OrderNode {
