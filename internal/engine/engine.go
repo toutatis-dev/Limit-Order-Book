@@ -346,3 +346,10 @@ func (ob *OrderBook) CancelOrder(id uint64) error {
 	return nil
 
 }
+
+func NewEngine() *Engine {
+	return &Engine{
+		SellBook: NewOrderBook(Sell),
+		BuyBook:  NewOrderBook(Buy),
+	}
+}
