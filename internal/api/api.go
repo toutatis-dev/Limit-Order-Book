@@ -124,3 +124,17 @@ func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	w.Write(response)
 }
+
+func (a *API) HandleGetBook(w http.ResponseWriter, r *http.Request) {
+	getBookStateResponse := a.engine.GetBookState()
+	response, err := json.Marshal(getBookStateResponse)
+	if err != nil {
+		http.Error(w, "Something went wrong", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	w.Write(response)
+
+}
