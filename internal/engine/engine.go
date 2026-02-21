@@ -20,6 +20,17 @@ type PriceLevel struct {
 	TotalQuantity uint64
 }
 
+type BookState struct {
+	Bid map[uint64][]OrderSummary `json:"bid"`
+	Ask map[uint64][]OrderSummary `json:"ask"`
+}
+
+type OrderSummary struct {
+	ID       uint64 `json:"id"`
+	Price    uint64 `json:"price"`
+	Quantity uint64 `json:"quantity"`
+}
+
 type OrderNode struct {
 	ID       uint64
 	Side     Side
@@ -352,4 +363,31 @@ func NewEngine() *Engine {
 		SellBook: NewOrderBook(Sell),
 		BuyBook:  NewOrderBook(Buy),
 	}
+}
+
+func (e *Engine) GetBookState() BookState {
+	bookState := BookState{
+		Bid: make(map[uint64][]OrderSummary),
+		Ask: make(map[uint64][]OrderSummary),
+	}
+
+	for _, pl := range e.BuyBook.SortedPL {
+		current := e.BuyBook.PriceLevel[pl].Head
+		for current != nil {
+			orderSummary := OrderSummary{ID: current.ID, Price: current.Price, Quantity: current.Quantity}
+			bookState.Bid[pl] = append(bookState.Bid[pl], orderSummary)
+			current = current.Next
+		}
+	}
+
+	for _, pl := range e.SellBook.SortedPL {
+		current := e.SellBook.PriceLevel[pl].Head
+		for current != nil {
+			orderSummary := OrderSummary{ID: current.ID, Price: current.Price, Quantity: current.Quantity}
+			bookState.Ask[pl] = append(bookState.Ask[pl], orderSummary)
+			current = current.Next
+		}
+	}
+
+	return bookState
 }
