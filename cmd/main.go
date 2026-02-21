@@ -1,15 +1,21 @@
 package main
 
 import (
+	"net/http"
+
+	"lob/internal/api"
 	"lob/internal/engine"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	order1 := engine.NewOrder(1, engine.Buy, 100, 10)
-	e := engine.Engine{
-		SellBook: engine.NewOrderBook(engine.Sell),
-		BuyBook:  engine.NewOrderBook(engine.Buy),
-	}
+	e := engine.NewEngine()
+	a := api.NewAPI(e)
 
-	e.Process(order1)
+	r := chi.NewRouter()
+
+	r.Post("/order", a.HandleCreateOrder)
+
+	http.ListenAndServe(":8080", r)
 }
