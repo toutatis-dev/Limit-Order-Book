@@ -1,4 +1,4 @@
-package main
+package engine
 
 import (
 	"fmt"
@@ -49,10 +49,6 @@ type Trade struct {
 	Price     uint64
 	Quantity  uint64
 	Timestamp time.Time
-}
-
-func main() {
-
 }
 
 func NewOrder(id uint64, side Side, price uint64, quantity uint64) *OrderNode {
