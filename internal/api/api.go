@@ -24,6 +24,15 @@ type OrderResponse struct {
 	Trades []engine.Trade `json:"trades"`
 }
 
+type CancelRequest struct {
+	ID uint64 `json:"id"`
+}
+
+type CancelResponse struct {
+	ID     uint64 `json:"id"`
+	Status string `json:"status"`
+}
+
 func NewAPI(e *engine.Engine) *API {
 	return &API{
 		engine: e,
@@ -80,4 +89,38 @@ func (a *API) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write(responseJson)
 
+}
+
+func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
+
+	var cancelRequest CancelRequest
+
+	decoder := json.NewDecoder(r.Body)
+
+	err := decoder.Decode(&cancelRequest)
+	if err != nil {
+		http.Error(w, "Something went wrong", 500)
+		return
+	}
+	err = a.engine.CancelOrder(cancelRequest.ID)
+	if err != nil {
+		http.Error(w, "Could not cancel order", 500)
+		return
+	}
+
+	cancelResponse := CancelResponse{
+		ID:     cancelRequest.ID,
+		Status: "Order has been cancelled",
+	}
+
+	response, err := json.Marshal(cancelResponse)
+
+	if err != nil {
+		http.Error(w, "something went wrong", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	w.Write(response)
 }
