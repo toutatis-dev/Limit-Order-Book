@@ -45,19 +45,19 @@ func (a *API) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&orderRequest)
 	if err != nil {
-		http.Error(w, "something went wrong", 500)
+		http.Error(w, "Could not decode JSON", http.StatusBadRequest)
 		return
 	}
 	if orderRequest.Price == 0 {
-		http.Error(w, "something went wrong", 500)
+		http.Error(w, "Price must be greater than 0", http.StatusBadRequest)
 		return
 	}
 	if orderRequest.Quantity == 0 {
-		http.Error(w, "something went wrong", 500)
+		http.Error(w, "Quantity must be greater than 0", http.StatusBadRequest)
 		return
 	}
 	if orderRequest.Side != engine.Buy && orderRequest.Side != engine.Sell {
-		http.Error(w, "something went wrong", 500)
+		http.Error(w, "Side must be either 0 or 1", http.StatusBadRequest)
 		return
 	}
 	//id, side, price, quant
@@ -99,12 +99,12 @@ func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 
 	err := decoder.Decode(&cancelRequest)
 	if err != nil {
-		http.Error(w, "Something went wrong", 500)
+		http.Error(w, "Could not decode JSON", http.StatusBadRequest)
 		return
 	}
 	err = a.engine.CancelOrder(cancelRequest.ID)
 	if err != nil {
-		http.Error(w, "Could not cancel order", 500)
+		http.Error(w, "Could not cancel order, check that the ID is valid", http.StatusNotFound)
 		return
 	}
 
@@ -121,7 +121,7 @@ func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
 
@@ -134,7 +134,7 @@ func (a *API) HandleGetBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 
 }
