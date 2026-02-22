@@ -39,7 +39,7 @@ type CancelResponse struct {
 	Status string `json:"status"`
 }
 
-func NewAPI(e *engine.Engine) *API {
+func NewAPI(e OrderProcessor) *API {
 	return &API{
 		Processor: e,
 	}
