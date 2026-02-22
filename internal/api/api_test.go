@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"lob/internal/engine"
 	"net/http"
 	"net/http/httptest"
@@ -30,18 +31,6 @@ func (m *MockEngine) GetBookState() engine.BookState {
 }
 
 func TestHandleCreateOrder(t *testing.T) {
-
-	mock := &MockEngine{
-		MockProcessResult: []engine.Trade{{
-			TakerID:   1,
-			MakerID:   2,
-			Price:     100,
-			Quantity:  10,
-			Timestamp: time.Now(),
-		},
-		},
-	}
-	a := NewAPI(mock)
 
 	tests := []struct {
 		name           string
@@ -88,6 +77,17 @@ func TestHandleCreateOrder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mock := &MockEngine{
+				MockProcessResult: []engine.Trade{{
+					TakerID:   1,
+					MakerID:   2,
+					Price:     100,
+					Quantity:  10,
+					Timestamp: time.Now(),
+				},
+				},
+			}
+			a := NewAPI(mock)
 			body, err := json.Marshal(tt.payload)
 			if err != nil {
 				t.Errorf("Failed to marshal payload: %v\n", err)
@@ -105,4 +105,13 @@ func TestHandleCreateOrder(t *testing.T) {
 
 		})
 	}
+}
+
+func TestCancelOrder(t *testing.T) {
+	mock := MockEngine{
+		MockCancelError: errors.New("ID does not exist in book"),
+	}
+
+	a := NewAPI(&mock)
+
 }
