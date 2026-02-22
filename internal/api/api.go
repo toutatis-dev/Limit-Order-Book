@@ -7,9 +7,15 @@ import (
 	"sync/atomic"
 )
 
+type OrderProcessor interface {
+	Process(order *engine.OrderNode) []engine.Trade
+	CancelOrder(id uint64) error
+	GetBookState() engine.BookState
+}
+
 type API struct {
-	engine *engine.Engine
-	nextID atomic.Uint64
+	Processor OrderProcessor
+	NextID    atomic.Uint64
 }
 
 type OrderRequest struct {
@@ -35,7 +41,7 @@ type CancelResponse struct {
 
 func NewAPI(e *engine.Engine) *API {
 	return &API{
-		engine: e,
+		Processor: e,
 	}
 }
 
@@ -61,9 +67,9 @@ func (a *API) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//id, side, price, quant
-	newOrder := engine.NewOrder(a.nextID.Add(1), orderRequest.Side, orderRequest.Price, orderRequest.Quantity)
+	newOrder := engine.NewOrder(a.NextID.Add(1), orderRequest.Side, orderRequest.Price, orderRequest.Quantity)
 	originalQuant := newOrder.Quantity
-	trades := a.engine.Process(newOrder)
+	trades := a.Processor.Process(newOrder)
 	var status string
 	if newOrder.Quantity == originalQuant {
 		status = "On book"
@@ -102,7 +108,7 @@ func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not decode JSON", http.StatusBadRequest)
 		return
 	}
-	err = a.engine.CancelOrder(cancelRequest.ID)
+	err = a.Processor.CancelOrder(cancelRequest.ID)
 	if err != nil {
 		http.Error(w, "Could not cancel order, check that the ID is valid", http.StatusNotFound)
 		return
@@ -126,7 +132,7 @@ func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) HandleGetBook(w http.ResponseWriter, r *http.Request) {
-	getBookStateResponse := a.engine.GetBookState()
+	getBookStateResponse := a.Processor.GetBookState()
 	response, err := json.Marshal(getBookStateResponse)
 	if err != nil {
 		http.Error(w, "Something went wrong", 500)
