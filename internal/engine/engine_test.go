@@ -62,14 +62,13 @@ func TestInsertPriceLevel(t *testing.T) {
 }
 
 func TestAddOrder(t *testing.T) {
-
 	ob := NewOrderBook(Buy)
 
 	testOrder := NewOrder(1, Buy, 100, 10)
 
 	ob.AddOrder(testOrder)
 
-	//test that the Head and Tail of the created price level point to the new order.
+	// test that the Head and Tail of the created price level point to the new order.
 	if ob.PriceLevel[testOrder.Price].Head != testOrder {
 		t.Errorf("PL Head not pointing to only order. Expected %v, got %v\n", testOrder, ob.PriceLevel[testOrder.Price].Head)
 	}
@@ -79,47 +78,43 @@ func TestAddOrder(t *testing.T) {
 
 	testOrder2 := NewOrder(2, Buy, 100, 20)
 	ob.AddOrder(testOrder2)
-	//test that the second order is inserted into the price level after the first.
-	if ob.PriceLevel[testOrder2.Price].Head.Next != testOrder2 { //verify that the second order is second in the price level
+	// test that the second order is inserted into the price level after the first.
+	if ob.PriceLevel[testOrder2.Price].Head.Next != testOrder2 { // verify that the second order is second in the price level
 		t.Errorf("Second Order not inserted into price level correctly. Expected %v, got %v\n", testOrder2, ob.PriceLevel[testOrder2.Price].Head.Next)
 	}
-	//check that thet ob.Orders map is intitialised with the orders for cancellations
+	// check that thet ob.Orders map is intitialised with the orders for cancellations
 	if ob.Orders[testOrder.ID] != testOrder {
 		t.Errorf("Orders Map is wrong. Expected %v, got %v\n", testOrder, ob.Orders[testOrder.ID])
 	}
 	if ob.Orders[testOrder2.ID] != testOrder2 {
 		t.Errorf("Orders Map is wrong. Expected %v, got %v\n", testOrder2, ob.Orders[testOrder2.ID])
 	}
-	//check that the best price is updated.
+	// check that the best price is updated.
 
 	if ob.BestPrice != testOrder.Price {
 		t.Errorf("BestPrice is wrong. Expected %v, got %v\n", testOrder.Price, ob.BestPrice)
 	}
-
 }
 
 func TestProcess(t *testing.T) {
-	//Initialise an engine, order books and orders.
-	//check that first order makes it onto the book
-	//construct a complementary order that will go on to the second book
-	//third order that will execute a trade fully, fourth order that will partially fill a trade
-	//ensure that it moves down/up the price levels correctly
+	// Initialise an engine, order books and orders.
+	// check that first order makes it onto the book
+	// construct a complementary order that will go on to the second book
+	// third order that will execute a trade fully, fourth order that will partially fill a trade
+	// ensure that it moves down/up the price levels correctly
 
-	e := Engine{
-		SellBook: NewOrderBook(Sell),
-		BuyBook:  NewOrderBook(Buy),
-	}
-	//bid order 1 - price 100, quant 20 - straight on the books with no match.
-	//ask order 1 - price 120, quant 15, - straight on the books with no match.
-	//bid order 2 - price 120, quant 15, - full match, never hits the book and empties ask order1
-	//ask order 2 - price 100, quant 10, - partial match, will never hit the books itself but will decrement bid order 1
-	//ask order 3 - price 100, quant 15, - another partial match but will empty the bid on books, and get sent to books itself
-	//ask order 4 - price 110, quant 5, - add another price level to sell book, will be executed after the 100 level
-	//bid order 3 - price 120, quant 10 - will completely empty both books, and fall through 2 price levels in the sell book
+	e := NewEngine()
+	// bid order 1 - price 100, quant 20 - straight on the books with no match.
+	// ask order 1 - price 120, quant 15, - straight on the books with no match.
+	// bid order 2 - price 120, quant 15, - full match, never hits the book and empties ask order1
+	// ask order 2 - price 100, quant 10, - partial match, will never hit the books itself but will decrement bid order 1
+	// ask order 3 - price 100, quant 15, - another partial match but will empty the bid on books, and get sent to books itself
+	// ask order 4 - price 110, quant 5, - add another price level to sell book, will be executed after the 100 level
+	// bid order 3 - price 120, quant 10 - will completely empty both books, and fall through 2 price levels in the sell book
 
 	bidOrder1 := NewOrder(1, Buy, 100, 20)
 	trade := e.Process(bidOrder1)
-	//check it hits the book
+	// check it hits the book
 	if e.BuyBook.PriceLevel[100].Head != bidOrder1 {
 		t.Errorf("bidOrder1 did not hit buybook correctly. Expected %v, got %v\n", bidOrder1, e.BuyBook.PriceLevel[100].Head)
 	}
@@ -129,7 +124,7 @@ func TestProcess(t *testing.T) {
 
 	askOrder1 := NewOrder(2, Sell, 120, 15)
 	trade = e.Process(askOrder1)
-	//check if it hits the book
+	// check if it hits the book
 	if e.SellBook.PriceLevel[120].Head != askOrder1 {
 		t.Errorf("askOrder1 did not hit sellbook correctly. Expected %v, got %v\n", askOrder1, e.SellBook.PriceLevel[120].Head)
 	}
@@ -140,7 +135,7 @@ func TestProcess(t *testing.T) {
 	bidOrder2 := NewOrder(3, Buy, 120, 15)
 	expectedQty := bidOrder2.Quantity
 	trade = e.Process(bidOrder2)
-	//check it empties the sell book and returns a slice of trades with correct ids, prices, and quantities
+	// check it empties the sell book and returns a slice of trades with correct ids, prices, and quantities
 	if e.BuyBook.PriceLevel[120] != nil {
 		t.Errorf("bidOrder2 has hit the books\n")
 	}
@@ -166,7 +161,7 @@ func TestProcess(t *testing.T) {
 	askOrder2 := NewOrder(4, Sell, 100, 10)
 	expectedQty = askOrder2.Quantity
 	trade = e.Process(askOrder2)
-	//check that trades slice is returned, check the maker id matches bid order 1. bid order 1 should be decremented by the correct amount
+	// check that trades slice is returned, check the maker id matches bid order 1. bid order 1 should be decremented by the correct amount
 	if e.SellBook.PriceLevel[100] != nil {
 		t.Errorf("askOrder2 has hit the books\n")
 	}
@@ -191,7 +186,7 @@ func TestProcess(t *testing.T) {
 
 	askOrder3 := NewOrder(5, Sell, 100, 15)
 	trade = e.Process(askOrder3)
-	//check that buy book is exhausted, and that askorder3 is written to sell book.
+	// check that buy book is exhausted, and that askorder3 is written to sell book.
 	if len(e.BuyBook.SortedPL) != 0 {
 		t.Errorf("bidOrder1 was not removed from buy book.\n")
 	}
@@ -213,7 +208,7 @@ func TestProcess(t *testing.T) {
 
 	askOrder4 := NewOrder(6, Sell, 110, 5)
 	trade = e.Process(askOrder4)
-	//ask order 4 - price 110, quant 5, - add another price level to sell book, will be executed after the 100 level
+	// ask order 4 - price 110, quant 5, - add another price level to sell book, will be executed after the 100 level
 	if len(e.SellBook.SortedPL) != 2 {
 		t.Errorf("failed to add a new price level for askOrder4\n")
 	}
@@ -228,8 +223,8 @@ func TestProcess(t *testing.T) {
 	expectedQtyAsk3 := askOrder3.Quantity
 	expectedQtyAsk4 := askOrder4.Quantity
 	trade = e.Process(bidOrder3)
-	//bid order 3 - price 120, quant 10 - will completely empty both books, and fall through 2 price levels in the sell book
-	//will execute askOrders 3 & 4
+	// bid order 3 - price 120, quant 10 - will completely empty both books, and fall through 2 price levels in the sell book
+	// will execute askOrders 3 & 4
 	// is it making the trade for full quant of askOrder3?
 	if trade[0].MakerID != askOrder3.ID {
 		t.Errorf("Trade not executed between bid3 and ask3. Expected %d, got %d\n", askOrder3.ID, trade[0].MakerID)
@@ -237,7 +232,7 @@ func TestProcess(t *testing.T) {
 	if trade[0].Quantity != expectedQtyAsk3 {
 		t.Errorf("Wrong quantity for trade between bid3 and ask3. Expected %d, got %d\n", expectedQtyAsk3, trade[0].Quantity)
 	}
-	//is it making the trade for full quant of askOrder4?
+	// is it making the trade for full quant of askOrder4?
 	if len(trade) >= 2 {
 		if trade[1].MakerID != askOrder4.ID {
 			t.Errorf("Trade not executed between bid3 and ask4. Expected %d, got %d\n", askOrder4.ID, trade[1].MakerID)
@@ -246,25 +241,21 @@ func TestProcess(t *testing.T) {
 			t.Errorf("Wrong quantity for trade between bid3 and ask4. Expected %d, got %d\n", expectedQtyAsk4, trade[1].Quantity)
 		}
 	}
-	//are both sell side price levels removed?
+	// are both sell side price levels removed?
 	if len(e.SellBook.SortedPL) != 0 {
 		t.Errorf("Price levels on sell side have not been removed after bid3 trades.")
 	}
-	//is the bidOrder fully emptied and not written to book
+	// is the bidOrder fully emptied and not written to book
 	if len(e.BuyBook.SortedPL) != 0 {
 		t.Errorf("Buy side still has price levels after bid3 trades.")
 	}
-
 }
 
 func TestCancelOrder(t *testing.T) {
-	//ccreate 2 orders on 2 price levels. Cancel the best price level
-	//is the best price updated. is the old price level removed.
-	//create multiple orders on the price level. does unlinking the list work
-	e := Engine{
-		SellBook: NewOrderBook(Sell),
-		BuyBook:  NewOrderBook(Buy),
-	}
+	// ccreate 2 orders on 2 price levels. Cancel the best price level
+	// is the best price updated. is the old price level removed.
+	// create multiple orders on the price level. does unlinking the list work
+	e := NewEngine()
 
 	bidOrder1 := NewOrder(1, Buy, 100, 10)
 	e.Process(bidOrder1)
@@ -290,7 +281,7 @@ func TestCancelOrder(t *testing.T) {
 	e.Process(askOrder3)
 	e.Process(askOrder4)
 	e.Process(askOrder5)
-	//cancel order 3, check that 4 <-> 2
+	// cancel order 3, check that 4 <-> 2
 	e.CancelOrder(askOrder3.ID)
 	if askOrder4.Prev != askOrder2 {
 		t.Errorf("Expected that order 4 -> order 2. Instead order 4 .prev is %v", askOrder4.Prev)
@@ -298,13 +289,13 @@ func TestCancelOrder(t *testing.T) {
 	if askOrder2.Next != askOrder4 {
 		t.Errorf("Expected that order 2 -> order 4. Instead order 2 .next is %v", askOrder2.Next)
 	}
-	//cancel 1, check that pl.Head -> 2
+	// cancel 1, check that pl.Head -> 2
 	e.CancelOrder(askOrder1.ID)
 	if e.SellBook.PriceLevel[askOrder2.Price].Head != askOrder2 {
 		t.Errorf("PL Head is not pointing to order 2. pl head is: %v", e.SellBook.PriceLevel[askOrder2.Price].Head)
 	}
 
-	//cancel 5, check that pl.Tail -> 4
+	// cancel 5, check that pl.Tail -> 4
 	e.CancelOrder(askOrder5.ID)
 	if e.SellBook.PriceLevel[askOrder5.Price].Tail != askOrder4 {
 		t.Errorf("PL Head is not pointing to order 4. pl head is: %v", e.SellBook.PriceLevel[askOrder2.Price].Tail)
