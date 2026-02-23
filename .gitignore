@@ -4,3 +4,6 @@ lob
 
 # Test cache
 *.test
+
+#Env
+.env

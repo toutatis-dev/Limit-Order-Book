@@ -1,0 +1,32 @@
+services:
+  lob:
+    build: .
+    restart: unless-stopped
+    container_name: lob
+    ports:
+      - "1770:1770"
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: lob-db
+      DB_PORT: "5432"
+      DB_USER: lob
+      DB_PASS: ${lobDB_PASS}
+      DB_NAME: lob
+    depends_on: 
+      lob-db:
+        condition: service_healthy
+
+  lob-db:
+    image: postgres:16
+    container_name: lob-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lob
+      POSTGRES_PASSWORD: ${lobDB_PASS}
+      POSTGRES_DB: lob
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lob -d lob"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
