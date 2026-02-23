@@ -1,14 +1,15 @@
 package api
 
 import (
+	"fmt"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"lob/internal/engine"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+	"github.com/go-chi/chi/v5"
 )
 
 type MockEngine struct {
@@ -108,10 +109,51 @@ func TestHandleCreateOrder(t *testing.T) {
 }
 
 func TestCancelOrder(t *testing.T) {
-	mock := MockEngine{
-		MockCancelError: errors.New("ID does not exist in book"),
-	}
+	tests := []struct {
+		name           string
+		url            string
+		expectedStatus int
+		mockResponse   error  
+	    	}{
+        	{
+			name:           "Valid id",
+			url:            "/order/1",
+			expectedStatus: http.StatusOK,
+			mockResponse: 	nil,
+        	},
+		{
+			name:	"Invalid Cancellation - non numeric id",
+			url:	"/order/abc",
+			expectedStatus: http.StatusBadRequest,
+			mockResponse: nil,
+		},
+		{
+			name: "Invalid Cancellation - order ID doesnt exist",
+			url: "/order/2",
+			expectedStatus:http.StatusNotFound ,
+			mockResponse:fmt.Errorf( "Order 2 does could not be found"),
+		},
+    		}
 
-	a := NewAPI(&mock)
-
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+		mock := &MockEngine{MockCancelError: tt.mockResponse}
+		a := NewAPI(mock)
+		r := chi.NewRouter()
+		r.Delete("/order/{id}", a.HandleCancelOrder)
+		req := httptest.NewRequest(http.MethodDelete, tt.url, bytes.NewBuffer(nil))
+		rr := httptest.NewRecorder()
+		r.ServeHTTP(rr, req)
+		if rr.Code != tt.expectedStatus {
+			t.Errorf("Expected %d, got %d", tt.expectedStatus, rr.Code)
+            	}
+		})
+	}	
 }
+
+
+
+
+
+
+
