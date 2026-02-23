@@ -1,16 +1,36 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"lob/internal/api"
 	"lob/internal/engine"
+	"lob/internal/store"
 
 	"github.com/go-chi/chi/v5"
 )
 
+type EnvVars struct {
+	DBUser string
+	DBPort string
+	DBPass string
+	DBHost string
+	DBName string
+}
+
 func main() {
-	e := engine.NewEngine()
+	env := EnvVars{
+		DBUser: os.Getenv("DB_USER"),
+		DBPort: os.Getenv("DB_PORT"),
+		DBPass: os.Getenv("DB_PASS"),
+		DBHost: os.Getenv("DB_HOST"),
+		DBName: os.Getenv("DB_NAME"),
+	}
+	pgUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.DBUser, env.DBPass, env.DBHost, env.DBPort, env.DBName)
+	store := store.NewStore(pgUrl)
+	e := engine.NewEngine(store)
 	a := api.NewAPI(e)
 
 	r := chi.NewRouter()
