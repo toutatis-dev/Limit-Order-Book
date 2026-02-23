@@ -33,10 +33,6 @@ type OrderResponse struct {
 	Trades []engine.Trade `json:"trades"`
 }
 
-type CancelRequest struct {
-	ID uint64 `json:"id"`
-}
-
 type CancelResponse struct {
 	ID     uint64 `json:"id"`
 	Status string `json:"status"`
