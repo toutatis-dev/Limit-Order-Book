@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"lob/internal/engine"
 	"net/http"
+	"strconv"
 	"sync/atomic"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type OrderProcessor interface {
@@ -99,23 +102,22 @@ func (a *API) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 
-	var cancelRequest CancelRequest
+	urlID := chi.URLParam(r, "id")
 
-	decoder := json.NewDecoder(r.Body)
-
-	err := decoder.Decode(&cancelRequest)
+	orderID, err := strconv.ParseUint(urlID, 10, 64)
 	if err != nil {
-		http.Error(w, "Could not decode JSON", http.StatusBadRequest)
+		http.Error(w, "Could not parse order id to uint, order id must be a number.", http.StatusBadRequest)
 		return
 	}
-	err = a.Processor.CancelOrder(cancelRequest.ID)
+
+	err = a.Processor.CancelOrder(orderID)
 	if err != nil {
 		http.Error(w, "Could not cancel order, check that the ID is valid", http.StatusNotFound)
 		return
 	}
 
 	cancelResponse := CancelResponse{
-		ID:     cancelRequest.ID,
+		ID:     orderID,
 		Status: "Order has been cancelled",
 	}
 
