@@ -10,7 +10,7 @@ services:
       DB_HOST: lob-db
       DB_PORT: "5432"
       DB_USER: lob
-      DB_PASS: ${lobDB_PASS}
+      DB_PASS: ${DB_PASS}
       DB_NAME: lob
     depends_on: 
       lob-db:
@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: lob
-      POSTGRES_PASSWORD: ${lobDB_PASS}
+      POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: lob
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lob -d lob"]
