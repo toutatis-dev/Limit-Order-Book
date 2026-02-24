@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"lob/internal/engine"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -52,8 +53,26 @@ func NewMetrics(reg prometheus.Registerer) *Metrics {
 
 }
 
-func (m *Metrics) RecordTrades()                                             {}
-func (m *Metrics) SetActiveBuyOrders(n uint64)                               {}
-func (m *Metrics) SetActiveSellOrders(n uint64)                              {}
-func (m *Metrics) RecordLatency(time.Time)                                   {}
-func (m *Metrics) SetVolumePL(price uint64, side engine.Side, volume uint64) {}
+func (m *Metrics) RecordTrades() {
+	m.TotalTrades.Inc()
+}
+
+func (m *Metrics) SetActiveBuyOrders(n uint64) {
+	m.ActiveOrdersBuy.Set(float64(n))
+}
+
+func (m *Metrics) SetActiveSellOrders(n uint64) {
+	m.ActiveOrdersSell.Set(float64(n))
+}
+
+func (m *Metrics) RecordLatency(duration time.Duration) {
+	m.OrderLatency.Observe(duration.Seconds())
+}
+
+func (m *Metrics) SetVolumePL(price uint64, side engine.Side, volume uint64) {
+
+	stringPrice := strconv.FormatUint(price, 10)
+	stringSide := strconv.FormatInt(int64(side), 10)
+
+	m.VolumePL.WithLabelValues(stringPrice, stringSide).Set(float64(volume))
+}
