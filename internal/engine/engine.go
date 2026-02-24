@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+
 	"log"
 	"sort"
 	"sync"
@@ -14,6 +15,18 @@ const (
 	Buy  Side = 1
 	Sell Side = 2
 )
+
+type DataStore interface {
+	WriteTrade(trade Trade) error
+}
+
+type MetricRecorder interface {
+	RecordTrades()
+	SetActiveBuyOrders(n uint64)
+	SetActiveSellOrders(n uint64)
+	RecordLatency(time.Time)
+	SetVolumePL(price uint64, side Side, volume uint64)
+}
 
 type PriceLevel struct {
 	Head          *OrderNode
@@ -54,6 +67,7 @@ type Engine struct {
 	SellBook *OrderBook
 	Store    DataStore
 	mu       sync.Mutex
+	Metrics  MetricRecorder
 }
 
 type Trade struct {
@@ -63,12 +77,6 @@ type Trade struct {
 	Quantity  uint64    `json:"quantity"`
 	Timestamp time.Time `json:"timestamp"`
 }
-
-type DataStore interface {
-	WriteTrade(trade Trade) error
-}
-
-type NullStore struct{} // struct for a null store to allow engine to instatiate before postgres is working
 
 func NewOrder(id uint64, side Side, price uint64, quantity uint64) *OrderNode {
 	return &OrderNode{
@@ -372,11 +380,12 @@ func (ob *OrderBook) CancelOrder(id uint64) error {
 	return nil
 }
 
-func NewEngine(store DataStore) *Engine {
+func NewEngine(store DataStore, metric MetricRecorder) *Engine {
 	return &Engine{
 		SellBook: NewOrderBook(Sell),
 		BuyBook:  NewOrderBook(Buy),
 		Store:    store,
+		Metrics:  metric,
 	}
 }
 
@@ -409,8 +418,4 @@ func (e *Engine) GetBookState() BookState {
 	}
 
 	return bookState
-}
-
-func (n *NullStore) WriteTrade(trade Trade) error {
-	return nil
 }
