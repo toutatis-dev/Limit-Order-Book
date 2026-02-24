@@ -17,7 +17,7 @@ func NewStore(url string) (*Store, error) {
 	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {
 		failure := fmt.Errorf("Unable to create connection pool: %v", err)
-		return &Store{}, failure
+		return nil, failure
 	}
 	store := Store{
 		Pool: pool,
@@ -35,7 +35,7 @@ func NewStore(url string) (*Store, error) {
 	)
 	if err != nil {
 		failure := fmt.Errorf("Could not create table: %v", err)
-		return &Store{}, failure
+		return nil, failure
 	}
 	return &store, nil
 }
