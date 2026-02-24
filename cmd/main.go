@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -29,7 +30,10 @@ func main() {
 		DBName: os.Getenv("DB_NAME"),
 	}
 	pgUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.DBUser, env.DBPass, env.DBHost, env.DBPort, env.DBName)
-	store := store.NewStore(pgUrl)
+	store, err := store.NewStore(pgUrl)
+	if err != nil {
+		log.Printf("Error creating NewStore: %v", err)
+	}
 	e := engine.NewEngine(store)
 	a := api.NewAPI(e)
 
