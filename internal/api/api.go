@@ -62,7 +62,7 @@ func (a *API) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if orderRequest.Side != engine.Buy && orderRequest.Side != engine.Sell {
-		http.Error(w, "Side must be either 0 or 1", http.StatusBadRequest)
+		http.Error(w, "Side must be either 1 or 2", http.StatusBadRequest)
 		return
 	}
 	//id, side, price, quant
