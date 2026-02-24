@@ -13,16 +13,31 @@ type Store struct {
 	Pool *pgxpool.Pool
 }
 
-func NewStore(url string) *Store {
+func NewStore(url string) (*Store, error) {
 	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {
-		fmt.Errorf("Unable to create connection pool: %v", err)
-		return &Store{}
+		failure := fmt.Errorf("Unable to create connection pool: %v", err)
+		return &Store{}, failure
 	}
 	store := Store{
 		Pool: pool,
 	}
-	return &store
+
+	_, err = pool.Exec(context.Background(), `
+		CREATE TABLE IF NOT EXISTS trades (
+		id          BIGSERIAL PRIMARY KEY,
+		taker_id    BIGINT NOT NULL,
+		maker_id    BIGINT NOT NULL,
+		price       BIGINT NOT NULL,
+		quantity    BIGINT NOT NULL,
+		timestamp   TIMESTAMPTZ NOT NULL
+		)`,
+	)
+	if err != nil {
+		failure := fmt.Errorf("Could not create table: %v", err)
+		return &Store{}, failure
+	}
+	return &store, nil
 }
 
 func (s *Store) WriteTrade(trade engine.Trade) error {
