@@ -8,9 +8,12 @@ import (
 
 	"lob/internal/api"
 	"lob/internal/engine"
+	"lob/internal/metrics"
 	"lob/internal/store"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type EnvVars struct {
@@ -36,7 +39,10 @@ func main() {
 	}
 	defer store.Close()
 
-	e := engine.NewEngine(store)
+	reg := prometheus.NewRegistry()
+	m := metrics.NewMetrics(reg)
+
+	e := engine.NewEngine(store, m)
 	a := api.NewAPI(e)
 
 	r := chi.NewRouter()
@@ -44,6 +50,7 @@ func main() {
 	r.Post("/order", a.HandleCreateOrder)
 	r.Delete("/order/{id}", a.HandleCancelOrder)
 	r.Get("/book", a.HandleGetBook)
+	r.Get("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP)
 
 	log.Fatal(http.ListenAndServe(":1770", r))
 }
