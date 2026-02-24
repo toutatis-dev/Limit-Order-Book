@@ -103,7 +103,7 @@ func TestProcess(t *testing.T) {
 	// third order that will execute a trade fully, fourth order that will partially fill a trade
 	// ensure that it moves down/up the price levels correctly
 
-	e := NewEngine()
+	e := NewEngine(&NullStore{})
 	// bid order 1 - price 100, quant 20 - straight on the books with no match.
 	// ask order 1 - price 120, quant 15, - straight on the books with no match.
 	// bid order 2 - price 120, quant 15, - full match, never hits the book and empties ask order1
@@ -255,7 +255,7 @@ func TestCancelOrder(t *testing.T) {
 	// ccreate 2 orders on 2 price levels. Cancel the best price level
 	// is the best price updated. is the old price level removed.
 	// create multiple orders on the price level. does unlinking the list work
-	e := NewEngine()
+	e := NewEngine(&NullStore{})
 
 	bidOrder1 := NewOrder(1, Buy, 100, 10)
 	e.Process(bidOrder1)
