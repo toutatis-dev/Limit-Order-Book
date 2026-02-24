@@ -19,12 +19,15 @@ highest bid. Unmatched or partially filled orders rest on the book.
 ## Endpoints
 
 POST   /order       - Place a limit order
+
 DELETE /order/{id}   - Cancel an order
+
 GET    /book         - Current book state (bids and asks)
 
 ## Run
 
 cp .env.example .env   # fill in your DB credentials
+
 docker compose up -d
 
 ## Test
