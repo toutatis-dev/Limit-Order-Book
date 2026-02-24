@@ -34,6 +34,8 @@ func main() {
 	if err != nil {
 		log.Printf("Error creating NewStore: %v", err)
 	}
+	defer store.Close()
+
 	e := engine.NewEngine(store)
 	a := api.NewAPI(e)
 

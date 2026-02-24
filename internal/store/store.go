@@ -54,3 +54,7 @@ func (s *Store) WriteTrade(trade engine.Trade) error {
 	}
 	return nil
 }
+
+func (s *Store) Close() {
+	s.Pool.Close()
+}
