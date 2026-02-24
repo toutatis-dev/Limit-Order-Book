@@ -24,7 +24,7 @@ type MetricRecorder interface {
 	RecordTrades()
 	SetActiveBuyOrders(n uint64)
 	SetActiveSellOrders(n uint64)
-	RecordLatency(time.Time)
+	RecordLatency(duration time.Duration)
 	SetVolumePL(price uint64, side Side, volume uint64)
 }
 
