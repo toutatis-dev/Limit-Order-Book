@@ -42,6 +42,15 @@ func NewStore(url string) (*Store, error) {
 
 func (s *Store) WriteTrade(trade engine.Trade) error {
 	// write the trade to the postgres store
+	_, err := s.Pool.Exec(context.Background(),
+		`INSERT INTO trades (taker_id, maker_id, price, quantity, timestamp)
+		VALUES ($1, $2, $3, $4, $5);
+		`,
+		trade.TakerID, trade.MakerID, trade.Price, trade.Quantity, trade.Timestamp,
+	)
 
+	if err != nil {
+		return fmt.Errorf("Could not write order: %v", err)
+	}
 	return nil
 }
