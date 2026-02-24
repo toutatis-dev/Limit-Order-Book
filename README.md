@@ -15,6 +15,7 @@ highest bid. Unmatched or partially filled orders rest on the book.
 - O(1) cancellation via order ID hashmap
 - Single-threaded matching engine behind a chi REST API
 - Trade logging to PostgreSQL
+- CI/CD via GitHub Actions — build, test, vet, then Docker image published to GHCR on successful CI pass
 
 ## Endpoints
 
@@ -30,6 +31,9 @@ cp .env.example .env   # fill in your DB credentials
 
 docker compose up -d
 
+A pre-built application image is also available at ghcr.io/toutatis-dev/limit-order-book:main
+
+
 ## Test
 
 go test ./...
@@ -37,4 +41,4 @@ go test ./...
 ## Planned
 
 - Prometheus metrics
-- GitHub Actions CI/CD
+
