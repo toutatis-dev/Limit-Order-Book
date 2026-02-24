@@ -12,7 +12,7 @@ type Side int64
 
 const (
 	Buy  Side = 1
-	Sell Side = 0
+	Sell Side = 2
 )
 
 type PriceLevel struct {
