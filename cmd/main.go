@@ -32,7 +32,7 @@ func main() {
 	pgUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", env.DBUser, env.DBPass, env.DBHost, env.DBPort, env.DBName)
 	store, err := store.NewStore(pgUrl)
 	if err != nil {
-		log.Printf("Error creating NewStore: %v", err)
+		log.Fatalf("Error creating NewStore: %v", err)
 	}
 	defer store.Close()
 
