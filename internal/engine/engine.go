@@ -47,13 +47,13 @@ type OrderBook struct {
 	Orders     map[uint64]*OrderNode  // full map of orders is kept for O(1) cancellation.
 	SortedPL   []uint64
 	Side       Side
-	mu         sync.Mutex
 }
 
 type Engine struct {
 	BuyBook  *OrderBook
 	SellBook *OrderBook
 	Store    DataStore
+	mu       sync.Mutex
 }
 
 type Trade struct {
@@ -188,6 +188,9 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 	// takes in an order, filters by side, makes any trades it can and if it is partial or unfulfilled, adds it to the correct book.
 	// buy matches if order price >= sellbook ask, sell price matches if <= buy bid
 
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	var oppositeBook *OrderBook
 	var ownBook *OrderBook
 
@@ -309,6 +312,10 @@ func NewOrderBook(side Side) *OrderBook {
 }
 
 func (e *Engine) CancelOrder(id uint64) error {
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	if e.BuyBook.Orders[id] != nil {
 		return e.BuyBook.CancelOrder(id)
 	}
@@ -374,6 +381,10 @@ func NewEngine(store DataStore) *Engine {
 }
 
 func (e *Engine) GetBookState() BookState {
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	bookState := BookState{
 		Bid: make(map[uint64][]OrderSummary),
 		Ask: make(map[uint64][]OrderSummary),
