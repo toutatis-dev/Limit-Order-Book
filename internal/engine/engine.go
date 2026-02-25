@@ -103,7 +103,7 @@ func (ob *OrderBook) AddOrder(metric MetricRecorder, order *OrderNode) error {
 	pl := ob.PriceLevel[order.Price]
 
 	if pl == nil {
-		ob.InsertPriceLevel(order.Price)
+		ob.InsertPriceLevel(metric, order.Price)
 		pl = ob.PriceLevel[order.Price]
 		pl.Head = order
 		pl.Tail = order
@@ -115,6 +115,7 @@ func (ob *OrderBook) AddOrder(metric MetricRecorder, order *OrderNode) error {
 	}
 
 	pl.TotalQuantity += order.Quantity
+	metric.SetVolumePL(pl.Head.Price, ob.Side, pl.TotalQuantity)
 
 	ob.Orders[order.ID] = order
 	if len(ob.SortedPL) == 1 {
@@ -128,9 +129,9 @@ func (ob *OrderBook) AddOrder(metric MetricRecorder, order *OrderNode) error {
 		}
 	}
 	if ob.Side == Sell {
-		metric.SetActiveSellOrders(uint64(len(ob.SortedPL)))
+		metric.SetActiveSellOrders(uint64(len(ob.Orders)))
 	} else {
-		metric.SetActiveBuyOrders(uint64(len(ob.SortedPL)))
+		metric.SetActiveBuyOrders(uint64(len(ob.Orders)))
 	}
 	return nil
 }
@@ -181,7 +182,7 @@ func (ob *OrderBook) NextBestPriceLevel() *PriceLevel {
 	return ob.PriceLevel[ob.BestPrice]
 }
 
-func (ob *OrderBook) InsertPriceLevel(price uint64) {
+func (ob *OrderBook) InsertPriceLevel(metric MetricRecorder, price uint64) {
 	// use sort.Search to find insertion point assuming descending order.
 	// sort.Search handles the empty case by returning index 0
 	// sort.Search(len(sortedPL), func (i int) bool {return sortedPL[i] <= newPL})
@@ -195,11 +196,16 @@ func (ob *OrderBook) InsertPriceLevel(price uint64) {
 	ob.SortedPL = newSlice
 
 	ob.PriceLevel[price] = &PriceLevel{Head: nil, Tail: nil, TotalQuantity: 0}
+	metric.SetVolumePL(price, ob.Side, 0)
 }
 
 func (e *Engine) Process(order *OrderNode) []Trade {
 	// takes in an order, filters by side, makes any trades it can and if it is partial or unfulfilled, adds it to the correct book.
 	// buy matches if order price >= sellbook ask, sell price matches if <= buy bid
+	start := time.Now()
+	defer func() {
+		e.Metrics.RecordLatency(time.Since(start))
+	}()
 
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -249,6 +255,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 		order.Quantity -= matchQTY
 		current.Quantity -= matchQTY
 		priceLevel.TotalQuantity -= matchQTY
+		e.Metrics.SetVolumePL(current.Price, current.Side, priceLevel.TotalQuantity)
 
 		trade := Trade{order.ID, current.ID, current.Price, matchQTY, time.Now()}
 		e.Metrics.RecordTrades()
@@ -303,6 +310,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 	if order.Quantity > 0 {
 		ownBook.AddOrder(e.Metrics, order)
 	}
+
 	return trades
 }
 
@@ -331,15 +339,23 @@ func (e *Engine) CancelOrder(id uint64) error {
 	defer e.mu.Unlock()
 
 	if e.BuyBook.Orders[id] != nil {
-		return e.BuyBook.CancelOrder(id)
+		ob := e.BuyBook.CancelOrder(e.Metrics, id)
+		if ob == nil {
+			e.Metrics.SetActiveBuyOrders(uint64(len(e.BuyBook.Orders)))
+			return nil
+		}
 	}
 	if e.SellBook.Orders[id] != nil {
-		return e.SellBook.CancelOrder(id)
+		ob := e.SellBook.CancelOrder(e.Metrics, id)
+		if ob == nil {
+			e.Metrics.SetActiveSellOrders(uint64(len(e.SellBook.Orders)))
+			return nil
+		}
 	}
 	return fmt.Errorf("ID %d not in either book", id)
 }
 
-func (ob *OrderBook) CancelOrder(id uint64) error {
+func (ob *OrderBook) CancelOrder(metric MetricRecorder, id uint64) error {
 	// search the id in the Orders map to find the node.
 	// set order.Prev.Next to order.Next
 	// set Order.Next.Prev to order.Prev
@@ -382,6 +398,7 @@ func (ob *OrderBook) CancelOrder(id uint64) error {
 	order.Prev = nil
 
 	ob.PriceLevel[order.Price].TotalQuantity -= order.Quantity
+	metric.SetVolumePL(order.Price, ob.Side, ob.PriceLevel[order.Price].TotalQuantity)
 	delete(ob.Orders, id)
 	return nil
 }

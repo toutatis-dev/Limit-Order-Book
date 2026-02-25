@@ -30,8 +30,8 @@ func TestNewOrder(t *testing.T) {
 
 func TestInsertPriceLevel(t *testing.T) {
 	ob := NewOrderBook(Buy)
-	ob.InsertPriceLevel(10)
-	ob.InsertPriceLevel(20)
+	ob.InsertPriceLevel(&NullMetricRecorder{}, 10)
+	ob.InsertPriceLevel(&NullMetricRecorder{}, 20)
 
 	if ob.SortedPL[0] != 20 {
 		t.Errorf("Sorted PL incorrectly. Expected 20, got %v\n", ob.SortedPL[0])
