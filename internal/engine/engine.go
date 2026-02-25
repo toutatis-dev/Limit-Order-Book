@@ -89,7 +89,7 @@ func NewOrder(id uint64, side Side, price uint64, quantity uint64) *OrderNode {
 	}
 }
 
-func (ob *OrderBook) AddOrder(order *OrderNode) error {
+func (ob *OrderBook) AddOrder(metric MetricRecorder, order *OrderNode) error {
 	// take the order and discover the price level. search the map in o(1) for the price level. if it doesnt exist, then create the price level and point the head & tail to this order.
 	// make sure to add the new price level to the sorted slice.
 	// if the price level exists, the current tail next needs to point to this order, the order.Prev needs to point to the tail and order.Next to nil, then update price level tail to order.
@@ -126,6 +126,11 @@ func (ob *OrderBook) AddOrder(order *OrderNode) error {
 		if ob.Side == Sell && (order.Price < ob.BestPrice || ob.BestPrice == 0) {
 			ob.BestPrice = order.Price
 		}
+	}
+	if ob.Side == Sell {
+		metric.SetActiveSellOrders(uint64(len(ob.SortedPL)))
+	} else {
+		metric.SetActiveBuyOrders(uint64(len(ob.SortedPL)))
 	}
 	return nil
 }
@@ -212,17 +217,17 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 
 	if len(oppositeBook.SortedPL) == 0 {
 		// no orders on opposite book.
-		ownBook.AddOrder(order)
+		ownBook.AddOrder(e.Metrics, order)
 		return []Trade{}
 	}
 
 	if order.Side == Buy && order.Price < oppositeBook.BestPrice {
-		ownBook.AddOrder(order)
+		ownBook.AddOrder(e.Metrics, order)
 		return []Trade{}
 	}
 
 	if order.Side == Sell && order.Price > oppositeBook.BestPrice {
-		ownBook.AddOrder(order)
+		ownBook.AddOrder(e.Metrics, order)
 		return []Trade{}
 	}
 
@@ -246,6 +251,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 		priceLevel.TotalQuantity -= matchQTY
 
 		trade := Trade{order.ID, current.ID, current.Price, matchQTY, time.Now()}
+		e.Metrics.RecordTrades()
 		err := e.Store.WriteTrade(trade)
 		if err != nil {
 			log.Printf("failed to write trade: %v\n", err)
@@ -269,20 +275,20 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 			if nextPL == nil {
 
 				if order.Quantity > 0 {
-					ownBook.AddOrder(order)
+					ownBook.AddOrder(e.Metrics, order)
 				}
 				return trades
 			}
 
 			if order.Side == Buy && order.Price < oppositeBook.BestPrice {
 				if order.Quantity > 0 {
-					ownBook.AddOrder(order)
+					ownBook.AddOrder(e.Metrics, order)
 				}
 				return trades
 			}
 			if order.Side == Sell && order.Price > oppositeBook.BestPrice {
 				if order.Quantity > 0 {
-					ownBook.AddOrder(order)
+					ownBook.AddOrder(e.Metrics, order)
 				}
 				return trades
 			}
@@ -295,7 +301,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 	}
 
 	if order.Quantity > 0 {
-		ownBook.AddOrder(order)
+		ownBook.AddOrder(e.Metrics, order)
 	}
 	return trades
 }

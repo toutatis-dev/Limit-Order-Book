@@ -62,11 +62,12 @@ func TestInsertPriceLevel(t *testing.T) {
 }
 
 func TestAddOrder(t *testing.T) {
+	nmr := NullMetricRecorder{}
 	ob := NewOrderBook(Buy)
 
 	testOrder := NewOrder(1, Buy, 100, 10)
 
-	ob.AddOrder(testOrder)
+	ob.AddOrder(&nmr, testOrder)
 
 	// test that the Head and Tail of the created price level point to the new order.
 	if ob.PriceLevel[testOrder.Price].Head != testOrder {
@@ -77,7 +78,7 @@ func TestAddOrder(t *testing.T) {
 	}
 
 	testOrder2 := NewOrder(2, Buy, 100, 20)
-	ob.AddOrder(testOrder2)
+	ob.AddOrder(&nmr, testOrder2)
 	// test that the second order is inserted into the price level after the first.
 	if ob.PriceLevel[testOrder2.Price].Head.Next != testOrder2 { // verify that the second order is second in the price level
 		t.Errorf("Second Order not inserted into price level correctly. Expected %v, got %v\n", testOrder2, ob.PriceLevel[testOrder2.Price].Head.Next)
