@@ -12,6 +12,7 @@ func (nmr *NullMetricRecorder) SetActiveBuyOrders(n uint64)                     
 func (nmr *NullMetricRecorder) SetActiveSellOrders(n uint64)                       {}
 func (nmr *NullMetricRecorder) RecordLatency(duration time.Duration)               {}
 func (nmr *NullMetricRecorder) SetVolumePL(price uint64, side Side, volume uint64) {}
+func (nmr *NullMetricRecorder) DeleteVolumePL(price uint64, side Side)             {}
 
 func (n *NullStore) WriteTrade(trade Trade) error {
 	return nil

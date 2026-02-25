@@ -76,3 +76,11 @@ func (m *Metrics) SetVolumePL(price uint64, side engine.Side, volume uint64) {
 
 	m.VolumePL.WithLabelValues(stringPrice, stringSide).Set(float64(volume))
 }
+
+func (m *Metrics) DeleteVolumePL(price uint64, side engine.Side) {
+	m.VolumePL.Delete(prometheus.Labels{
+		"price": strconv.FormatUint(price, 10),
+		"side":  strconv.FormatInt(int64(side), 10),
+	})
+
+}

@@ -26,6 +26,7 @@ type MetricRecorder interface {
 	SetActiveSellOrders(n uint64)
 	RecordLatency(duration time.Duration)
 	SetVolumePL(price uint64, side Side, volume uint64)
+	DeleteVolumePL(price uint64, side Side)
 }
 
 type PriceLevel struct {
@@ -270,6 +271,11 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 			removedOrder := priceLevel.RemoveHead()
 			if removedOrder != nil {
 				delete(oppositeBook.Orders, removedOrder.ID)
+				if oppositeBook.Side == Buy {
+					e.Metrics.SetActiveBuyOrders(uint64(len(oppositeBook.Orders)))
+				} else {
+					e.Metrics.SetActiveSellOrders(uint64(len(oppositeBook.Orders)))
+				}
 			}
 
 		}
@@ -277,7 +283,7 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 		if next == nil && priceLevel.TotalQuantity == 0 {
 			// call NextBestPriceLevel it should return a ptr to the current BestPL so that we can set next to point at the head of the PL
 
-			oppositeBook.removePriceLevel(current.Price)
+			oppositeBook.removePriceLevel(e.Metrics, current.Price)
 			nextPL := oppositeBook.NextBestPriceLevel()
 			if nextPL == nil {
 
@@ -314,10 +320,11 @@ func (e *Engine) Process(order *OrderNode) []Trade {
 	return trades
 }
 
-func (ob *OrderBook) removePriceLevel(price uint64) {
+func (ob *OrderBook) removePriceLevel(metric MetricRecorder, price uint64) {
 	// delete the price level from the map
 	// clear the price level from the sorted list
 	delete(ob.PriceLevel, price)
+	metric.DeleteVolumePL(price, ob.Side)
 	i := sort.Search(len(ob.SortedPL), func(i int) bool { return ob.SortedPL[i] <= price })
 
 	if i < len(ob.SortedPL) && ob.SortedPL[i] == price {
@@ -372,7 +379,7 @@ func (ob *OrderBook) CancelOrder(metric MetricRecorder, id uint64) error {
 
 	// Check if price level will be empty after removal of order.If so, remove it
 	if order.Prev == nil && order.Next == nil {
-		ob.removePriceLevel(order.Price)
+		ob.removePriceLevel(metric, order.Price)
 		if order.Price == ob.BestPrice { // if this price level was the best, then determine nextbest
 			ob.NextBestPriceLevel()
 		}
