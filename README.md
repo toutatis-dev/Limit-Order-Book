@@ -22,7 +22,7 @@ book until matched or cancelled.
 
 ## Dashboard
 
-![Grafana Dashboard](docs/dashboard.png)
+![Grafana Dashboard](Docs/dashboard.png)
 
 ## Tech Stack
 
