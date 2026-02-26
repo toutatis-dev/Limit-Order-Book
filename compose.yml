@@ -1,6 +1,6 @@
 services:
   lob:
-    build: .
+    image: ghcr.io/toutatis-dev/limit-order-book:main
     restart: unless-stopped
     container_name: lob
     ports:

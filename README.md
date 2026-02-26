@@ -49,7 +49,7 @@ cp .env.example .env   # fill in DB credentials
 docker compose up -d
 ```
 
-A pre-built image is available at `ghcr.io/toutatis-dev/limit-order-book:main`
+A pre-built image is included in the compose.yml, it can be downloaded seperately at `ghcr.io/toutatis-dev/limit-order-book:main`
 
 ## Test
 ```bash
